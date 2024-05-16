@@ -132,7 +132,6 @@ const Game = () => {
         };
 
     }, [])
-    console.log(user);
     
      if (!user) {
          return <h1>Loading...</h1>
@@ -142,6 +141,8 @@ const Game = () => {
         return (
             <div className='w-full h-screen flex-col justify-center items-center'>
                 <div className='w-full h-1/3 flex flex-col justify-between items-center header-bg py-3 rounded-b-[76px]'>
+                    <div className='circles_1'></div>
+                    <div className='circles_2'></div>
                     <img className='w-64' src="/public/logo-3.png" alt="" />
                     <h2 className='text-4xl font-bold grow text-center flex items-center'>БИТВА <br /> РАЗУМОВ</h2>
                 </div>
@@ -218,7 +219,7 @@ const Game = () => {
                                 : <button className="w-full p-2 bg-red-300 rounded-lg" onClick={() => {
                                     socket.emit("addPoints", { activeUser, points: 0 })
                                     hiddenQuestion()
-                                }}>Далее</button>
+                                }}>Следующий вопрос</button>
                             }
                             {queue.length != 0 &&
                                 <div className='flex flex-col gap-y-3'>
