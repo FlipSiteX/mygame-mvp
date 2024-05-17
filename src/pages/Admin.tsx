@@ -32,7 +32,6 @@ const Admin = () => {
 
         console.log(selectedGame)
         
-
     }
 
     const getAllGames = async () => {
@@ -49,7 +48,7 @@ const Admin = () => {
             <div className='bg-white rounded-lg p-4 flex flex-col gap-y-3'>
                 <h2 className='text-center text-xl'>Своя игра</h2>
                 <select name="" onChange={(e) => handleGame(e.target.value)} defaultValue={'#'} className='w-80 border-2 p-2 rounded-lg'>
-                    <option value="#" disabled>Выберете игры</option>
+                    <option value="#" disabled>Выберите игры</option>
                     {games?.map((game: IGame) => {
                         return (
                             <option key={game.id} value={game.id}>{game.title}</option>
