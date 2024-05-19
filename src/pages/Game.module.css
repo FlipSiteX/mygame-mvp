@@ -10,7 +10,7 @@
     color: white;
     background-color: #007953;
     cursor: pointer;
-	@apply rounded-lg w-64 shadow-lg shadow-slate-600;
+	@apply rounded-lg max-w-64 shadow-lg shadow-slate-600;
 
     &:hover {
         background-color: #00b37e;

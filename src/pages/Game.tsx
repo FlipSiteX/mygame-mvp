@@ -5,8 +5,6 @@ import { IQuestion } from "../interface/IQuestion";
 import { ITopic } from "../interface/ITopic";
 import { useLocation } from "react-router-dom";
 import { socket } from "../socket";
-import toast from "react-hot-toast/headless";
-import { dataGame } from "../game";
 import styles from "./Game.module.css";
 import classNames from "classnames";
 
@@ -17,14 +15,16 @@ const Game = () => {
 	const [user, setUser] = useState<IUser | null>(null);
 	const [users, setUsers] = useState<IUser[]>();
 	const [queue, setQueue] = useState<IUser[]>([]);
-	const [game, setGame] = useState<IGame>(dataGame);
+	const [game, setGame] = useState<IGame>();
 	const [selectedQuestion, setSelectedQuestion] = useState<IQuestion | null>(
 		null
 	);
 	const [activeUser, setActiveUser] = useState<IUser | null>();
+	const [lastAnsweredUser, setLastAnsweredUser] = useState<IUser | null>(null);
 	const [isSelect, setIsSelect] = useState(false);
 	const [isUser, setIsUser] = useState(false);
 	const [isAnswer, setIsAnswer] = useState(false);
+	const [isPointsCorrect, setIsPointsCorrect] = useState(true);
 
 	// Функции для работы с клиентом
 	const showQuestion = (question: IQuestion) => {
@@ -37,11 +37,11 @@ const Game = () => {
 	const hiddenQuestion = () => {
 		setIsSelect(false);
 		setIsAnswer(true);
+		setLastAnsweredUser(activeUser as IUser);
 		changeUser();
 	};
 
 	const closeQuestion = () => {
-		setSelectedQuestion(null);
 		setIsAnswer(false);
 		socket.emit("closeQuestion");
 	};
@@ -49,17 +49,17 @@ const Game = () => {
 	// Функции для работы с сервером
 	const addPointUser = () => {
 		socket.emit("addPoints", { activeUser, points: selectedQuestion?.points });
-
 		hiddenQuestion();
+	};
+
+	const reassignPoints = () => {
+		setIsPointsCorrect(false);
 	};
 
 	const answerQuestion = () => {
 		if (!selectedQuestion) {
 			return;
 		}
-
-		toast.success("Вы успешно добавлены в очередь");
-
 		socket.emit("answerQuestion", user);
 	};
 
@@ -67,10 +67,8 @@ const Game = () => {
 		socket.emit("changeUser");
 	};
 
-	const getGameData = () => {
-		// @ts-ignore
-		const data = JSON.parse(localStorage.getItem("game"));
-		console.log(data);
+	const getGameData = async () => {
+		const data = JSON.parse(localStorage.getItem("game") as string);
 		data.categories.forEach((item: any) =>
 			item.questions.sort((a: any, b: any) => a.points - b.points)
 		);
@@ -83,7 +81,7 @@ const Game = () => {
 			setUser(newData);
 		}
 
-		setActiveUser(null);
+		//setActiveUser(null);
 		setQueue([]);
 		setUsers(users);
 	});
@@ -128,6 +126,8 @@ const Game = () => {
 			console.log("disconnected");
 			socket.connect();
 		});
+
+		getGameData();
 
 		return () => {
 			socket.disconnect();
@@ -174,12 +174,13 @@ const Game = () => {
 						>
 							Ответить
 						</button>
-					) : (
-						<p>
+					) : selectedQuestion &&
+					  queue.find((el: IUser) => el.username == user?.username) ? (
+						<p className='text-xl'>
 							Вы отвечаете{" "}
 							{arr[queue.findIndex((el) => el.username == user?.username)]}
 						</p>
-					)}
+					) : null}
 				</div>
 			</div>
 		);
@@ -204,7 +205,7 @@ const Game = () => {
 							</h2>
 							{selectedQuestion?.question_type == "img" && (
 								<img
-									src={`http://localhost:8000/public/${selectedQuestion.question_file}`}
+									src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
 									alt=''
 									className='mx-auto rounded-lg max-w-[300px] max-h-[260px] object-cover'
 								/>
@@ -215,7 +216,7 @@ const Game = () => {
 									className='mx-auto'
 								>
 									<source
-										src={`http://localhost:8000/public/${selectedQuestion.question_file}`}
+										src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
 									/>
 								</audio>
 							)}
@@ -225,36 +226,27 @@ const Game = () => {
 									className='mx-auto'
 								>
 									<source
-										src={`http://localhost:8000/public/${selectedQuestion.question_file}`}
+										src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
 									/>
 								</video>
 							)}
 						</div>
 						<div className='flex flex-col gap-y-3'>
 							{queue.length > 0 ? (
-								[...queue]?.map((user) => {
-									if (user.username == activeUser?.username) {
-										return (
-											<div
-												key={user.username}
-												className='w-full drop-shadow-lg border-2 flex bg-green-100 justify-between p-3 rounded-lg'
-											>
-												<h2>Имя: {user.username}</h2>
-												<h2>Очки: {user.points}</h2>
-											</div>
-										);
-									}
-
-									return (
-										<div
-											key={user.username}
-											className='w-full drop-shadow-lg border-2 flex justify-between p-3 rounded-lg'
-										>
-											<h2>Имя: {user.username}</h2>
-											<h2>Очки: {user.points}</h2>
-										</div>
-									);
-								})
+								[...queue]?.map((user) => (
+									<div
+										key={user.username}
+										className={classNames(
+											user.username === activeUser?.username
+												? "bg-green-200 border-white"
+												: null,
+											"w-full drop-shadow-lg border-2 bg-white flex justify-between p-3 rounded-lg"
+										)}
+									>
+										<h2>Имя: {user.username}</h2>
+										<h2>Очки: {user.points}</h2>
+									</div>
+								))
 							) : (
 								<button
 									className='w-full p-2 bg-red-300 rounded-lg'
@@ -276,7 +268,7 @@ const Game = () => {
 									</button>
 									<button
 										className='w-full p-2 bg-yellow-300 rounded-lg'
-										onClick={changeUser}
+										onClick={() => changeUser()}
 									>
 										Перейти к другому игроку
 									</button>
@@ -340,10 +332,12 @@ const Game = () => {
 			)}
 
 			<div className='grid grid-cols-3 justify-between items-center my-4 p-4'>
-				<h1 className='text-3xl font-bold text-end'>{game?.title}</h1>
-				<div className="col-span-2 justify-self-end">
+				<h1 className='col-span-2 text-4xl font-bold text-center'>
+					{game?.title}
+				</h1>
+				<div className='justify-self-end'>
 					<button
-						className='text-3xl font-bold text-end mr-[20px] underline decoration-2'
+						className='text-4xl font-bold text-end mr-[30px] underline decoration-2'
 						onClick={() => {
 							setIsUser(!isUser);
 						}}
@@ -359,6 +353,7 @@ const Game = () => {
 						{game?.categories.map((topic: ITopic) => (
 							<div
 								className={classNames(styles.category, "text-4xl font-bold")}
+								key={topic.title}
 							>
 								{topic.title}
 							</div>
@@ -366,7 +361,10 @@ const Game = () => {
 					</div>
 					<div className={styles.buttons_grid}>
 						{game?.categories.map((topic: ITopic) => (
-							<div className={styles.buttons_row}>
+							<div
+								className={styles.buttons_row}
+								key={topic.id}
+							>
 								{topic.questions.map((question: IQuestion) => {
 									if (!question.isHidden) {
 										return (
@@ -374,7 +372,7 @@ const Game = () => {
 												onClick={() => {
 													showQuestion(question);
 												}}
-												key={question.question}
+												key={question.id}
 												className={styles.question_button}
 											>
 												<h2 className='text-center text-5xl font-bold'>
@@ -383,29 +381,113 @@ const Game = () => {
 											</div>
 										);
 									}
-									return <div></div>;
+									return (
+										<div
+											className={classNames(
+												styles.question_button,
+												"invisible"
+											)}
+											key={question.id}
+										></div>
+									);
 								})}
 							</div>
 						))}
 					</div>
 				</div>
 			) : (
-				<div className='w-full flex flex-col items-center gap-y-3'>
-					{
-						// @ts-ignore
-						users &&
-							[...users]
-								?.sort((a, b) => b.points - a.points)
+				<div className='flex w-[800px] bg-white p-4 rounded-lg mx-auto flex-col gap-y-3'>
+					{!!selectedQuestion && (
+						<button
+							onClick={() => reassignPoints()}
+							className='w-full bg-red-300 hover:bg-red-400 drop-shadow-lg text-center text-2xl p-5 rounded-lg'
+						>
+							Отменить очки за последний вопрос
+						</button>
+					)}
+					{users && isPointsCorrect
+						? [...users]
+								?.filter((user) => user.role !== "admin")
+								.sort((a, b) => b.points - a.points)
+								.map((user, id) => (
+									<div
+										key={user.username}
+										className={classNames(
+											user.username == activeUser?.username
+												? "bg-green-200 border-white"
+												: null,
+											"w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+										)}
+									>
+										<div className='flex items-center'>
+											{/[0-2]/.test(String(id)) && (
+												<i
+													className={classNames(id == 0 ? "text-yellow-400" : id == 1 ? "text-slate-400" : "text-orange-600", "fa-solid fa-trophy text-2xl")}
+												></i>
+											)}
+											<h2
+												className={classNames(
+													/[0-2]/.test(String(id)) ? "ml-4" : null,
+													"text-2xl"
+												)}
+											>
+												Имя: {user.username}
+											</h2>
+										</div>
+										<h2 className='text-2xl'>Очки: {user.points}</h2>
+									</div>
+								))
+						: users &&
+						  [...users]
+								?.filter(
+									(user) =>
+										user.role !== "admin" &&
+										user.username !== lastAnsweredUser?.username
+								)
+								.sort((a, b) => b.points - a.points)
 								.map((user) => (
 									<div
 										key={user.username}
-										className='w-[800px] bg-white drop-shadow-lg border-2 flex justify-between p-5 rounded-lg'
+										onClick={() => setActiveUser(user)}
+										className={classNames(
+											user.username == activeUser?.username
+												? "bg-green-200 border-white"
+												: null,
+											"w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+										)}
 									>
 										<h2 className='text-2xl'>Имя: {user.username}</h2>
 										<h2 className='text-2xl'>Очки: {user.points}</h2>
 									</div>
-								))
-					}
+								))}
+					{!isPointsCorrect && selectedQuestion && (
+						<div className='flex flex-col gap-y-3'>
+							<button
+								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-green-300 hover:bg-green-400'
+								onClick={addPointUser}
+							>
+								Добавить очки {activeUser?.username}
+							</button>
+							<button
+								onClick={() => {
+									console.log(selectedQuestion);
+									console.log(lastAnsweredUser);
+								}}
+								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-yellow-300 hover:bg-yellow-400'
+							>
+								Перейти к другому игроку
+							</button>
+							<button
+								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-red-300 hover:bg-red-400'
+								onClick={() => {
+									setIsPointsCorrect(true);
+									setActiveUser(null);
+								}}
+							>
+								Отмена
+							</button>
+						</div>
+					)}
 				</div>
 			)}
 		</div>
