@@ -238,9 +238,8 @@ const Game = () => {
 										key={user.username}
 										className={classNames(
 											user.username === activeUser?.username
-												? "bg-green-200 border-white"
-												: null,
-											"w-full drop-shadow-lg border-2 bg-white flex justify-between p-3 rounded-lg"
+												? "w-full drop-shadow-lg border-2 bg-green-200 border-white  flex justify-between p-3 rounded-lg"
+												: "w-full drop-shadow-lg border-2 bg-white flex justify-between p-3 rounded-lg"
 										)}
 									>
 										<h2>Имя: {user.username}</h2>
@@ -268,7 +267,7 @@ const Game = () => {
 									</button>
 									<button
 										className='w-full p-2 bg-yellow-300 rounded-lg'
-										onClick={() => changeUser()}
+										onClick={changeUser}
 									>
 										Перейти к другому игроку
 									</button>
@@ -412,17 +411,19 @@ const Game = () => {
 								.map((user, id) => (
 									<div
 										key={user.username}
-										className={classNames(
-											user.username == activeUser?.username
-												? "bg-green-200 border-white"
-												: null,
-											"w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
-										)}
+										className='w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg'
 									>
 										<div className='flex items-center'>
 											{/[0-2]/.test(String(id)) && (
 												<i
-													className={classNames(id == 0 ? "text-yellow-400" : id == 1 ? "text-slate-400" : "text-orange-600", "fa-solid fa-trophy text-2xl")}
+													className={classNames(
+														id == 0
+															? "text-yellow-400"
+															: id == 1
+															? "text-slate-400"
+															: "text-orange-600",
+														"fa-solid fa-trophy text-2xl"
+													)}
 												></i>
 											)}
 											<h2
@@ -451,9 +452,8 @@ const Game = () => {
 										onClick={() => setActiveUser(user)}
 										className={classNames(
 											user.username == activeUser?.username
-												? "bg-green-200 border-white"
-												: null,
-											"w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+												? "w-full bg-green-200 border-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+												: "w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
 										)}
 									>
 										<h2 className='text-2xl'>Имя: {user.username}</h2>
