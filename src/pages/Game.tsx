@@ -8,7 +8,15 @@ import { socket } from "../socket";
 import styles from "./Game.module.css";
 import classNames from "classnames";
 
-const arr = ["первым", "вторым", "третьим", "четвертым", "пятым"];
+const arr = [
+	"первым",
+	"вторым",
+	"третьим",
+	"четвертым",
+	"пятым",
+	"шестым",
+	"седьмым",
+];
 
 const Game = () => {
 	const location = useLocation();
@@ -20,29 +28,33 @@ const Game = () => {
 		null
 	);
 	const [activeUser, setActiveUser] = useState<IUser | null>();
+	const [lastQuestion, setLastQuestion] = useState<IQuestion | null>(null);
 	const [lastAnsweredUser, setLastAnsweredUser] = useState<IUser | null>(null);
+	const [userToReassignPoints, setUserToReassignPoints] =
+		useState<IUser | null>();
 	const [isSelect, setIsSelect] = useState(false);
 	const [isUser, setIsUser] = useState(false);
 	const [isAnswer, setIsAnswer] = useState(false);
 	const [isPointsCorrect, setIsPointsCorrect] = useState(true);
+	const [showAnswerButton, setShowAnswerButton] = useState(true);
 
 	// Функции для работы с клиентом
 	const showQuestion = (question: IQuestion) => {
 		socket.emit("selectQuestion", question);
 		question.isHidden = true;
 		setIsSelect(true);
-		setSelectedQuestion(question);
 	};
 
 	const hiddenQuestion = () => {
 		setIsSelect(false);
 		setIsAnswer(true);
-		setLastAnsweredUser(activeUser as IUser);
 		changeUser();
 	};
 
 	const closeQuestion = () => {
 		setIsAnswer(false);
+		setLastQuestion(selectedQuestion as IQuestion);
+		setSelectedQuestion(null);
 		socket.emit("closeQuestion");
 	};
 
@@ -52,14 +64,15 @@ const Game = () => {
 		hiddenQuestion();
 	};
 
-	const reassignPoints = () => {
-		setIsPointsCorrect(false);
+	const reassignPoints = (lastAnsweredUser: IUser, userToReass: IUser) => {
+		socket.emit("reassignPoints", {
+			lastAnsweredUser,
+			userToReass,
+			points: lastQuestion?.points,
+		});
 	};
 
-	const answerQuestion = () => {
-		if (!selectedQuestion) {
-			return;
-		}
+	const answerQuestion = (user: IUser) => {
 		socket.emit("answerQuestion", user);
 	};
 
@@ -67,7 +80,7 @@ const Game = () => {
 		socket.emit("changeUser");
 	};
 
-	const getGameData = async () => {
+	const getGameData = () => {
 		const data = JSON.parse(localStorage.getItem("game") as string);
 		data.categories.forEach((item: any) =>
 			item.questions.sort((a: any, b: any) => a.points - b.points)
@@ -75,19 +88,18 @@ const Game = () => {
 		setGame(data);
 	};
 
-	socket.on("newUserList", (users) => {
+	socket.on("newUserList", (users, lastAnsweredUser) => {
 		if (user?.role == "user") {
 			const newData = users?.find((el: IUser) => el.username == user.username);
 			setUser(newData);
 		}
 
-		//setActiveUser(null);
-		setQueue([]);
+		setLastAnsweredUser(lastAnsweredUser);
+		setActiveUser(null);
 		setUsers(users);
 	});
 
 	useEffect(() => {
-		// getGameData()
 		socket.emit("joinGame", {
 			username: location.state?.username,
 			role: location.state?.role,
@@ -108,6 +120,7 @@ const Game = () => {
 
 		socket.on("setActiveQuestion", (activeQuestion) => {
 			setSelectedQuestion(activeQuestion);
+			setQueue([]);
 		});
 
 		socket.on("getQueue", (userQueue) => {
@@ -167,20 +180,21 @@ const Game = () => {
 					<h2 className='text-center text-xl'>{user?.username}</h2>
 					<h2 className='text-center text-xl'>Очки: {user?.points}</h2>
 					{selectedQuestion &&
-					!queue.find((el: IUser) => el.username == user?.username) ? (
-						<button
-							onClick={answerQuestion}
-							className='w-40 h-40 rounded-full text-2xl bg-green-300 p-2'
-						>
-							Ответить
-						</button>
-					) : selectedQuestion &&
-					  queue.find((el: IUser) => el.username == user?.username) ? (
-						<p className='text-xl'>
-							Вы отвечаете{" "}
-							{arr[queue.findIndex((el) => el.username == user?.username)]}
-						</p>
-					) : null}
+						!queue.find((el: IUser) => el.username == user?.username) && (
+							<button
+								onClick={() => answerQuestion(user)}
+								className='w-40 h-40 rounded-full text-2xl bg-green-300 p-2'
+							>
+								Ответить
+							</button>
+						)}
+					{selectedQuestion &&
+						queue.find((el: IUser) => el.username == user?.username) && (
+							<p className='text-xl'>
+								Вы отвечаете{" "}
+								{arr[queue.findIndex((el) => el.username == user?.username)]}
+							</p>
+						)}
 				</div>
 			</div>
 		);
@@ -189,8 +203,8 @@ const Game = () => {
 	return (
 		<div className='w-full h-screen flex flex-col relative bg-background-img bg-cover'>
 			{isSelect && (
-				<div className='absolute w-full h-screen z-10 flex justify-center items-center text-lg p-4 bg-background-img bg-cover'>
-					<div className='w-[800px] bg-white p-4 rounded-lg flex flex-col gap-y-3'>
+				<div className='absolute w-full min-h-screen z-10 flex justify-center items-center text-lg p-4 bg-background-img bg-cover'>
+					<div className='w-[1200px] h-auto bg-white p-4 rounded-lg flex flex-col gap-y-3'>
 						<div>
 							<h2 className='text-wrap text-center text-xl'>
 								Вопрос за {selectedQuestion?.points}
@@ -205,9 +219,9 @@ const Game = () => {
 							</h2>
 							{selectedQuestion?.question_type == "img" && (
 								<img
-									src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
+									src={`http://localhost:8000/${selectedQuestion.question_file}`}
 									alt=''
-									className='mx-auto rounded-lg max-w-[300px] max-h-[260px] object-cover'
+									className='mx-auto rounded-lg h-[400px] object-cover'
 								/>
 							)}
 							{selectedQuestion?.question_type == "music" && (
@@ -216,7 +230,7 @@ const Game = () => {
 									className='mx-auto'
 								>
 									<source
-										src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
+										src={`http://localhost:8000/${selectedQuestion.question_file}`}
 									/>
 								</audio>
 							)}
@@ -226,7 +240,7 @@ const Game = () => {
 									className='mx-auto'
 								>
 									<source
-										src={`http://localhost:8000/public/file/${selectedQuestion.question_file}`}
+										src={`http://localhost:8000/${selectedQuestion.question_file}`}
 									/>
 								</video>
 							)}
@@ -242,7 +256,7 @@ const Game = () => {
 												: "w-full drop-shadow-lg border-2 bg-white flex justify-between p-3 rounded-lg"
 										)}
 									>
-										<h2>Имя: {user.username}</h2>
+										<h2>{user.username}</h2>
 										<h2>Очки: {user.points}</h2>
 									</div>
 								))
@@ -289,15 +303,15 @@ const Game = () => {
 
 			{isAnswer && (
 				<div className='absolute w-full h-screen bg-background-img z-10 flex justify-center items-center text-lg p-4'>
-					<div className='w-[600px] bg-white p-4 rounded-lg flex flex-col gap-y-3'>
+					<div className='w-[1200px] bg-white p-4 rounded-lg flex flex-col gap-y-3'>
 						<h2 className='text-wrap text-center text-2xl font-bold'>
 							{selectedQuestion?.answer}
 						</h2>
 						{selectedQuestion?.answer_type == "img" && (
 							<img
-								src={`http://localhost:8000/public/${selectedQuestion.answer_file}`}
+								src={`http://localhost:8000/${selectedQuestion.answer_file}`}
 								alt=''
-								className='mx-auto rounded-lg max-w-[300px] max-h-[260px] object-cover'
+								className='mx-auto rounded-lg h-[400px] object-cover'
 							/>
 						)}
 						{selectedQuestion?.answer_type == "music" && (
@@ -306,7 +320,7 @@ const Game = () => {
 								className='mx-auto'
 							>
 								<source
-									src={`http://localhost:8000/public/${selectedQuestion.answer_file}`}
+									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
 								/>
 							</audio>
 						)}
@@ -316,7 +330,7 @@ const Game = () => {
 								className='mx-auto'
 							>
 								<source
-									src={`http://localhost:8000/public/${selectedQuestion.answer_file}`}
+									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
 								/>
 							</video>
 						)}
@@ -396,13 +410,18 @@ const Game = () => {
 				</div>
 			) : (
 				<div className='flex w-[800px] bg-white p-4 rounded-lg mx-auto flex-col gap-y-3'>
-					{!!selectedQuestion && (
+					{lastQuestion && isPointsCorrect && (
 						<button
-							onClick={() => reassignPoints()}
+							onClick={() => setIsPointsCorrect(false)}
 							className='w-full bg-red-300 hover:bg-red-400 drop-shadow-lg text-center text-2xl p-5 rounded-lg'
 						>
-							Отменить очки за последний вопрос
+							Переназначить очки за последний вопрос
 						</button>
+					)}
+					{!isPointsCorrect && (
+						<h2 className='text-2xl'>
+							Кому назначить очки ({lastQuestion?.points}) за последний вопрос:
+						</h2>
 					)}
 					{users && isPointsCorrect
 						? [...users]
@@ -432,7 +451,7 @@ const Game = () => {
 													"text-2xl"
 												)}
 											>
-												Имя: {user.username}
+												{user.username}
 											</h2>
 										</div>
 										<h2 className='text-2xl'>Очки: {user.points}</h2>
@@ -449,39 +468,37 @@ const Game = () => {
 								.map((user) => (
 									<div
 										key={user.username}
-										onClick={() => setActiveUser(user)}
+										onClick={() => {
+											setUserToReassignPoints(user);
+										}}
 										className={classNames(
-											user.username == activeUser?.username
+											user.username == userToReassignPoints?.username
 												? "w-full bg-green-200 border-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
 												: "w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
 										)}
 									>
-										<h2 className='text-2xl'>Имя: {user.username}</h2>
+										<h2 className='text-2xl'>{user.username}</h2>
 										<h2 className='text-2xl'>Очки: {user.points}</h2>
 									</div>
 								))}
-					{!isPointsCorrect && selectedQuestion && (
+					{!isPointsCorrect && (
 						<div className='flex flex-col gap-y-3'>
 							<button
 								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-green-300 hover:bg-green-400'
-								onClick={addPointUser}
-							>
-								Добавить очки {activeUser?.username}
-							</button>
-							<button
 								onClick={() => {
-									console.log(selectedQuestion);
-									console.log(lastAnsweredUser);
+									reassignPoints(
+										lastAnsweredUser as IUser,
+										userToReassignPoints as IUser
+									);
+									setIsPointsCorrect(true);
 								}}
-								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-yellow-300 hover:bg-yellow-400'
 							>
-								Перейти к другому игроку
+								Добавить очки {userToReassignPoints?.username}
 							</button>
 							<button
 								className='w-full text-2xl text-center drop-shadow-lg p-5 rounded-lg bg-red-300 hover:bg-red-400'
 								onClick={() => {
 									setIsPointsCorrect(true);
-									setActiveUser(null);
 								}}
 							>
 								Отмена
