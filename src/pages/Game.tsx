@@ -159,7 +159,7 @@ const Game = () => {
 					<div className='circles_2'></div>
 					<img
 						className='w-64'
-						src='/public/logo-3.png'
+						src='/logo-3.png'
 						alt=''
 					/>
 					<h2 className='text-4xl font-bold grow text-center flex items-center'>
@@ -204,13 +204,12 @@ const Game = () => {
 		<div className='w-full h-screen flex flex-col relative bg-background-img bg-cover'>
 			{isSelect && (
 				<div className='absolute w-full min-h-screen z-10 flex justify-center items-center text-lg p-4 bg-background-img bg-cover'>
-					<div className='w-[1200px] h-auto bg-white p-4 rounded-lg flex flex-col gap-y-3'>
-						<div>
-							<h2 className='text-wrap text-center text-xl'>
+					<div className='w-[1200px] max-h-[900px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
+							<h2 className='text-wrap text-center text-2xl font-bold'>
 								Вопрос за {selectedQuestion?.points}
 							</h2>
 							{selectedQuestion?.desc && (
-								<p className='text-wrap text-center text-xl'>
+								<p className='text-wrap text-center text-2xl'>
 									{selectedQuestion?.desc}
 								</p>
 							)}
@@ -221,7 +220,7 @@ const Game = () => {
 								<img
 									src={`http://localhost:8000/${selectedQuestion.question_file}`}
 									alt=''
-									className='mx-auto rounded-lg h-[400px] object-cover'
+									className='mx-auto rounded-lg h-[660px] object-cover'
 								/>
 							)}
 							{selectedQuestion?.question_type == "music" && (
@@ -244,7 +243,6 @@ const Game = () => {
 									/>
 								</video>
 							)}
-						</div>
 						<div className='flex flex-col gap-y-3'>
 							{queue.length > 0 ? (
 								[...queue]?.map((user) => (
@@ -303,15 +301,23 @@ const Game = () => {
 
 			{isAnswer && (
 				<div className='absolute w-full h-screen bg-background-img z-10 flex justify-center items-center text-lg p-4'>
-					<div className='w-[1200px] bg-white p-4 rounded-lg flex flex-col gap-y-3'>
+					<div className='w-[1200px] max-h-[900px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
+						<h2 className='text-wrap text-center text-2xl font-bold'>
+							Вопрос за {selectedQuestion?.points}
+						</h2>
 						<h2 className='text-wrap text-center text-2xl font-bold'>
 							{selectedQuestion?.answer}
 						</h2>
+						{selectedQuestion?.answer_desc && (
+							<p className='text-wrap text-center text-2xl'>
+								{selectedQuestion?.answer_desc}
+							</p>
+						)}
 						{selectedQuestion?.answer_type == "img" && (
 							<img
 								src={`http://localhost:8000/${selectedQuestion.answer_file}`}
 								alt=''
-								className='mx-auto rounded-lg h-[400px] object-cover'
+								className='mx-auto rounded-lg h-[660px] object-cover'
 							/>
 						)}
 						{selectedQuestion?.answer_type == "music" && (
@@ -365,7 +371,10 @@ const Game = () => {
 					<div className={styles.categories}>
 						{game?.categories.map((topic: ITopic) => (
 							<div
-								className={classNames(styles.category, "text-4xl font-bold")}
+								className={classNames(
+									styles.category,
+									"text-4xl text-end font-bold"
+								)}
 								key={topic.title}
 							>
 								{topic.title}

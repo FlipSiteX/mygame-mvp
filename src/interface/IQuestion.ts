@@ -5,6 +5,7 @@ export interface IQuestion {
     question_type: string,
     question_file?: string,
     answer: string,
+    answer_desc: string,
     answer_type: string,
     answer_file?: string,
     points: number,
