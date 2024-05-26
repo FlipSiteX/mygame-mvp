@@ -36,7 +36,7 @@ const Game = () => {
 	const [isUser, setIsUser] = useState(false);
 	const [isAnswer, setIsAnswer] = useState(false);
 	const [isPointsCorrect, setIsPointsCorrect] = useState(true);
-	const [showAnswerButton, setShowAnswerButton] = useState(true);
+	const [completedQuestionsCount, setCompletedQuestionsCount] = useState(0);
 
 	// Функции для работы с клиентом
 	const showQuestion = (question: IQuestion) => {
@@ -85,7 +85,14 @@ const Game = () => {
 		data.categories.forEach((item: any) =>
 			item.questions.sort((a: any, b: any) => a.points - b.points)
 		);
+
 		setGame(data);
+	};
+
+	const endGame = () => {
+		setLastQuestion(null);
+		setCompletedQuestionsCount(completedQuestionsCount + 1);
+		socket.emit("endGame", users);
 	};
 
 	socket.on("newUserList", (users, lastAnsweredUser) => {
@@ -205,44 +212,46 @@ const Game = () => {
 			{isSelect && (
 				<div className='absolute w-full min-h-screen z-10 flex justify-center items-center text-lg p-4 bg-background-img bg-cover'>
 					<div className='w-[1200px] max-h-[900px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
-							<h2 className='text-wrap text-center text-2xl font-bold'>
-								Вопрос за {selectedQuestion?.points}
-							</h2>
-							{selectedQuestion?.desc && (
-								<p className='text-wrap text-center text-2xl'>
-									{selectedQuestion?.desc}
-								</p>
-							)}
-							<h2 className='text-wrap text-center text-2xl font-bold'>
-								{selectedQuestion?.question}
-							</h2>
-							{selectedQuestion?.question_type == "img" && (
+						<h2 className='text-wrap text-center text-2xl font-bold'>
+							Вопрос за {selectedQuestion?.points}
+						</h2>
+						{selectedQuestion?.desc && (
+							<p className='text-wrap text-center text-2xl'>
+								{selectedQuestion?.desc}
+							</p>
+						)}
+						<h2 className='text-wrap text-center text-2xl font-bold'>
+							{selectedQuestion?.question}
+						</h2>
+						{selectedQuestion?.question_type == "img" && (
+							<div className='w-full h-[660px] grid place-items-center rounded-lg overflow-y-scroll'>
 								<img
 									src={`http://localhost:8000/${selectedQuestion.question_file}`}
 									alt=''
-									className='mx-auto rounded-lg h-[660px] object-cover'
+									className='mx-auto h-[660px] rounded-lg object-cover'
 								/>
-							)}
-							{selectedQuestion?.question_type == "music" && (
-								<audio
-									controls
-									className='mx-auto'
-								>
-									<source
-										src={`http://localhost:8000/${selectedQuestion.question_file}`}
-									/>
-								</audio>
-							)}
-							{selectedQuestion?.question_type == "video" && (
-								<video
-									controls
-									className='mx-auto'
-								>
-									<source
-										src={`http://localhost:8000/${selectedQuestion.question_file}`}
-									/>
-								</video>
-							)}
+							</div>
+						)}
+						{selectedQuestion?.question_type == "music" && (
+							<audio
+								controls
+								className='mx-auto'
+							>
+								<source
+									src={`http://localhost:8000/${selectedQuestion.question_file}`}
+								/>
+							</audio>
+						)}
+						{selectedQuestion?.question_type == "video" && (
+							<video
+								controls
+								className='mx-auto rounded-lg'
+							>
+								<source
+									src={`http://localhost:8000/${selectedQuestion.question_file}`}
+								/>
+							</video>
+						)}
 						<div className='flex flex-col gap-y-3'>
 							{queue.length > 0 ? (
 								[...queue]?.map((user) => (
@@ -262,6 +271,7 @@ const Game = () => {
 								<button
 									className='w-full p-2 bg-red-300 rounded-lg'
 									onClick={() => {
+										setCompletedQuestionsCount(completedQuestionsCount + 1);
 										socket.emit("addPoints", { activeUser, points: 0 });
 										hiddenQuestion();
 									}}
@@ -273,7 +283,10 @@ const Game = () => {
 								<div className='flex flex-col gap-y-3'>
 									<button
 										className='w-full p-2 bg-green-300 rounded-lg'
-										onClick={addPointUser}
+										onClick={() => {
+											setCompletedQuestionsCount(completedQuestionsCount + 1);
+											addPointUser();
+										}}
 									>
 										Добавить очки {activeUser?.username}
 									</button>
@@ -286,6 +299,7 @@ const Game = () => {
 									<button
 										className='w-full p-2 bg-red-300 rounded-lg'
 										onClick={() => {
+											setCompletedQuestionsCount(completedQuestionsCount + 1);
 											socket.emit("addPoints", { activeUser, points: 0 });
 											hiddenQuestion();
 										}}
@@ -314,11 +328,13 @@ const Game = () => {
 							</p>
 						)}
 						{selectedQuestion?.answer_type == "img" && (
-							<img
-								src={`http://localhost:8000/${selectedQuestion.answer_file}`}
-								alt=''
-								className='mx-auto rounded-lg h-[660px] object-cover'
-							/>
+							<div className='w-full h-[660px]  grid place-items-center rounded-lg overflow-y-scroll'>
+								<img
+									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
+									alt=''
+									className='mx-auto h-[660px] rounded-lg object-cover'
+								/>
+							</div>
 						)}
 						{selectedQuestion?.answer_type == "music" && (
 							<audio
@@ -333,7 +349,7 @@ const Game = () => {
 						{selectedQuestion?.answer_type == "video" && (
 							<video
 								controls
-								className='mx-auto'
+								className='mx-auto rounded-lg'
 							>
 								<source
 									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
@@ -350,13 +366,13 @@ const Game = () => {
 				</div>
 			)}
 
-			<div className='grid grid-cols-3 justify-between items-center my-4 p-4'>
-				<h1 className='col-span-2 text-4xl font-bold text-center'>
+			<div className='grid grid-cols-4 justify-between items-center my-4 p-4'>
+				<h1 className='col-start-2 col-end-4 text-4xl font-bold text-center'>
 					{game?.title}
 				</h1>
-				<div className='justify-self-end'>
+				<div className='col-end-5 justify-self-end'>
 					<button
-						className='text-4xl font-bold text-end mr-[30px] underline decoration-2'
+						className='text-4xl font-bold text-center mr-[30px] underline decoration-2'
 						onClick={() => {
 							setIsUser(!isUser);
 						}}
@@ -366,7 +382,7 @@ const Game = () => {
 				</div>
 			</div>
 
-			{!isUser ? (
+			{!isUser && completedQuestionsCount < 1 ? (
 				<div className={styles.grid_wrapper}>
 					<div className={styles.categories}>
 						{game?.categories.map((topic: ITopic) => (
@@ -427,6 +443,15 @@ const Game = () => {
 							Переназначить очки за последний вопрос
 						</button>
 					)}
+					{completedQuestionsCount == 1 && (
+						<button
+							onClick={endGame}
+							className='w-full bg-green-300 hover:bg-green-400 drop-shadow-lg text-center text-2xl p-5 rounded-lg'
+						>
+							Завершить игру
+						</button>
+					)}
+					{completedQuestionsCount > 1 && <h2 className='text-2xl font-bold'>Итоги</h2>}
 					{!isPointsCorrect && (
 						<h2 className='text-2xl'>
 							Кому назначить очки ({lastQuestion?.points}) за последний вопрос:

@@ -1,19 +1,25 @@
+import axios from 'axios';
 import { useState } from 'react'
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 const Login = () => {
 
     const navigate = useNavigate();
-
     const [username, setUsername] = useState("")
 
-    const joinRoom = () => {
+    const joinRoom = async () => {
 
         if (!username) {
-            toast.error('Напишите username');
+            toast.error('Введите имя команды');
             return;
         }
 
+        const response = await axios.post("ссылка", {teamName: username});
+        
+        if (!response.data.succes) {
+            toast.error('Такой команды не существует');
+            return;
+        }
 
         navigate(`/game`, {
             state: {
@@ -24,7 +30,7 @@ const Login = () => {
         });
     };
 
-    return (
+    return (       
         <div className='w-full h-screen flex-col justify-center items-center bg-cover bg-background-img'>
             <div className='w-full h-1/2 flex justify-center lg:justify-between  items-center px-16'>
                 <h2 className='text-7xl font-bold text-center'>БИТВА <br /> РАЗУМОВ</h2>
