@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { IGame } from '../interface/IGame';
 import classNames from 'classnames';
+import toast from 'react-hot-toast';
 
 const Admin = () => {
 
@@ -14,6 +15,7 @@ const Admin = () => {
     const createRoom = () => {
         if (!Object.keys(selectedGame).length) {
             setIsGameSelected(false);
+            toast.error("Выберите игру");
             return;
         };
         localStorage.setItem("game", JSON.stringify(selectedGame))
@@ -38,7 +40,7 @@ const Admin = () => {
     }
 
     const getAllGames = async () => {
-        const response = await axios.get("http://localhost:8000/games")
+        const response = await axios.get("http://192.168.10.53:8003/games")
         setGames([...response.data])
     }
 

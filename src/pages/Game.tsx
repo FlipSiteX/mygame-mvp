@@ -82,7 +82,7 @@ const Game = () => {
 
 	const getGameData = () => {
 		const data = JSON.parse(localStorage.getItem("game") as string);
-		data.categories.forEach((item: any) =>
+		data?.categories.forEach((item: any) =>
 			item.questions.sort((a: any, b: any) => a.points - b.points)
 		);
 
@@ -92,6 +92,7 @@ const Game = () => {
 	const endGame = () => {
 		setLastQuestion(null);
 		setCompletedQuestionsCount(completedQuestionsCount + 1);
+		localStorage.clear();
 		socket.emit("endGame", users);
 	};
 
@@ -211,7 +212,7 @@ const Game = () => {
 		<div className='w-full h-screen flex flex-col relative bg-background-img bg-cover'>
 			{isSelect && (
 				<div className='absolute w-full min-h-screen z-10 flex justify-center items-center text-lg p-4 bg-background-img bg-cover'>
-					<div className='w-[1200px] max-h-[900px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
+					<div className='w-[1200px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
 						<h2 className='text-wrap text-center text-2xl font-bold'>
 							Вопрос за {selectedQuestion?.points}
 						</h2>
@@ -224,13 +225,11 @@ const Game = () => {
 							{selectedQuestion?.question}
 						</h2>
 						{selectedQuestion?.question_type == "img" && (
-							<div className='w-full h-[660px] grid place-items-center rounded-lg overflow-y-scroll'>
-								<img
-									src={`http://localhost:8000/${selectedQuestion.question_file}`}
-									alt=''
-									className='mx-auto h-[660px] rounded-lg object-cover'
-								/>
-							</div>
+							<img
+								src={`http://192.168.10.53:8003/${selectedQuestion.question_file}`}
+								alt=''
+								className='mx-auto h-[600px] rounded-lg object-cover'
+							/>
 						)}
 						{selectedQuestion?.question_type == "music" && (
 							<audio
@@ -238,7 +237,7 @@ const Game = () => {
 								className='mx-auto'
 							>
 								<source
-									src={`http://localhost:8000/${selectedQuestion.question_file}`}
+									src={`http://192.168.10.53:8003/${selectedQuestion.question_file}`}
 								/>
 							</audio>
 						)}
@@ -248,7 +247,7 @@ const Game = () => {
 								className='mx-auto rounded-lg'
 							>
 								<source
-									src={`http://localhost:8000/${selectedQuestion.question_file}`}
+									src={`http://192.168.10.53:8003/${selectedQuestion.question_file}`}
 								/>
 							</video>
 						)}
@@ -314,8 +313,8 @@ const Game = () => {
 			)}
 
 			{isAnswer && (
-				<div className='absolute w-full h-screen bg-background-img z-10 flex justify-center items-center text-lg p-4'>
-					<div className='w-[1200px] max-h-[900px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
+				<div className='absolute w-full min-h-screen bg-background-img z-10 flex justify-center items-center text-lg p-4'>
+					<div className='w-[1200px] bg-white p-4 rounded-lg flex flex-col space-y-4 gap-y-3'>
 						<h2 className='text-wrap text-center text-2xl font-bold'>
 							Вопрос за {selectedQuestion?.points}
 						</h2>
@@ -328,13 +327,11 @@ const Game = () => {
 							</p>
 						)}
 						{selectedQuestion?.answer_type == "img" && (
-							<div className='w-full h-[660px]  grid place-items-center rounded-lg overflow-y-scroll'>
-								<img
-									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
-									alt=''
-									className='mx-auto h-[660px] rounded-lg object-cover'
-								/>
-							</div>
+							<img
+								src={`http://192.168.10.53:8003/${selectedQuestion.answer_file}`}
+								alt=''
+								className='mx-auto h-[600px] rounded-lg object-cover'
+							/>
 						)}
 						{selectedQuestion?.answer_type == "music" && (
 							<audio
@@ -342,7 +339,7 @@ const Game = () => {
 								className='mx-auto'
 							>
 								<source
-									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
+									src={`http://192.168.10.53:8003/${selectedQuestion.answer_file}`}
 								/>
 							</audio>
 						)}
@@ -352,7 +349,7 @@ const Game = () => {
 								className='mx-auto rounded-lg'
 							>
 								<source
-									src={`http://localhost:8000/${selectedQuestion.answer_file}`}
+									src={`http://192.168.10.53:8003/${selectedQuestion.answer_file}`}
 								/>
 							</video>
 						)}
@@ -367,6 +364,7 @@ const Game = () => {
 			)}
 
 			<div className='grid grid-cols-4 justify-between items-center my-4 p-4'>
+				<img className="justify-self-center" src="/logo-3.png" width={250} alt="logo" />
 				<h1 className='col-start-2 col-end-4 text-4xl font-bold text-center'>
 					{game?.title}
 				</h1>
@@ -382,7 +380,7 @@ const Game = () => {
 				</div>
 			</div>
 
-			{!isUser && completedQuestionsCount < 1 ? (
+			{!isUser && completedQuestionsCount < 25 ? (
 				<div className={styles.grid_wrapper}>
 					<div className={styles.categories}>
 						{game?.categories.map((topic: ITopic) => (
@@ -443,7 +441,7 @@ const Game = () => {
 							Переназначить очки за последний вопрос
 						</button>
 					)}
-					{completedQuestionsCount == 1 && (
+					{completedQuestionsCount === 25 && (
 						<button
 							onClick={endGame}
 							className='w-full bg-green-300 hover:bg-green-400 drop-shadow-lg text-center text-2xl p-5 rounded-lg'
@@ -451,7 +449,7 @@ const Game = () => {
 							Завершить игру
 						</button>
 					)}
-					{completedQuestionsCount > 1 && <h2 className='text-2xl font-bold'>Итоги</h2>}
+					{completedQuestionsCount > 25 && <h2 className='text-2xl font-bold'>Итоги</h2>}
 					{!isPointsCorrect && (
 						<h2 className='text-2xl'>
 							Кому назначить очки ({lastQuestion?.points}) за последний вопрос:
@@ -459,62 +457,64 @@ const Game = () => {
 					)}
 					{users && isPointsCorrect
 						? [...users]
-								?.filter((user) => user.role !== "admin")
-								.sort((a, b) => b.points - a.points)
-								.map((user, id) => (
-									<div
-										key={user.username}
-										className='w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg'
-									>
-										<div className='flex items-center'>
-											{/[0-2]/.test(String(id)) && (
-												<i
-													className={classNames(
-														id == 0
-															? "text-yellow-400"
-															: id == 1
+							?.filter((user) => user.role !== "admin")
+							.sort((a, b) => b.points - a.points)
+							.map((user, id) => (
+								<div
+									key={user.username}
+									className='w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg'
+								>
+									<div className='flex items-center'>
+										{/[0-2]/.test(String(id)) && (
+											<i
+												className={classNames(
+													id == 0
+														? "text-yellow-400"
+														: id == 1
 															? "text-slate-400"
 															: "text-orange-600",
-														"fa-solid fa-trophy text-2xl"
-													)}
-												></i>
-											)}
-											<h2
-												className={classNames(
-													/[0-2]/.test(String(id)) ? "ml-4" : null,
 													"text-2xl"
 												)}
 											>
-												{user.username}
-											</h2>
-										</div>
-										<h2 className='text-2xl'>Очки: {user.points}</h2>
-									</div>
-								))
-						: users &&
-						  [...users]
-								?.filter(
-									(user) =>
-										user.role !== "admin" &&
-										user.username !== lastAnsweredUser?.username
-								)
-								.sort((a, b) => b.points - a.points)
-								.map((user) => (
-									<div
-										key={user.username}
-										onClick={() => {
-											setUserToReassignPoints(user);
-										}}
-										className={classNames(
-											user.username == userToReassignPoints?.username
-												? "w-full bg-green-200 border-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
-												: "w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+												<svg xmlns="http://www.w3.org/2000/svg" height='30px' width='30px' viewBox="0 0 576 512"><path fill="currentColor" d="M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-5.1 66.3-31.1 111.2-63 142.3z" /></svg>
+											</i>
 										)}
-									>
-										<h2 className='text-2xl'>{user.username}</h2>
-										<h2 className='text-2xl'>Очки: {user.points}</h2>
+										<h2
+											className={classNames(
+												/[0-2]/.test(String(id)) ? "ml-4" : null,
+												"text-2xl"
+											)}
+										>
+											{user.username}
+										</h2>
 									</div>
-								))}
+									<h2 className='text-2xl'>Очки: {user.points}</h2>
+								</div>
+							))
+						: users &&
+						[...users]
+							?.filter(
+								(user) =>
+									user.role !== "admin" &&
+									user.username !== lastAnsweredUser?.username
+							)
+							.sort((a, b) => b.points - a.points)
+							.map((user) => (
+								<div
+									key={user.username}
+									onClick={() => {
+										setUserToReassignPoints(user);
+									}}
+									className={classNames(
+										user.username == userToReassignPoints?.username
+											? "w-full bg-green-200 border-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+											: "w-full bg-white border-2 drop-shadow-lg flex justify-between p-5 rounded-lg"
+									)}
+								>
+									<h2 className='text-2xl'>{user.username}</h2>
+									<h2 className='text-2xl'>Очки: {user.points}</h2>
+								</div>
+							))}
 					{!isPointsCorrect && (
 						<div className='flex flex-col gap-y-3'>
 							<button

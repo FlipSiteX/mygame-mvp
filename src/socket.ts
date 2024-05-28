@@ -8,4 +8,4 @@ const options = {
     timeout: 10000,
     transports: ['websocket'],
 };
-export const socket = io("http://localhost:3800", options);
+export const socket = io("http://192.168.10.53:3800", options);
