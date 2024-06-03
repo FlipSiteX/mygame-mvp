@@ -54,13 +54,13 @@ const Login = () => {
 						setUsername(event.target.value);
 					}}
 					value={username}
-					className='w-96 border-2 p-4 text-lg rounded-lg'
+					className='w-full mx-10 sm:w-96 border-2 p-4 text-lg rounded-lg'
 					type='text'
 					placeholder='Название команды'
 				/>
 				<button
 					onClick={joinRoom}
-					className='w-96 bg-[#85EEAB] text-2xl font-bold p-4 hover:text-white rounded-lg hover:bg-[#437856] ease-out'
+					className='w-full mx-10 sm:w-96 bg-[#85EEAB] text-2xl font-bold p-4 hover:text-white rounded-lg hover:bg-[#437856]'
 				>
 					Войти
 				</button>

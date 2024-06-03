@@ -40,7 +40,7 @@ const Admin = () => {
     }
 
     const getAllGames = async () => {
-        const response = await axios.get("http://192.168.10.53:8003/games")
+        const response = await axios.get("http://192.168.1.33:8000/games")
         setGames([...response.data])
     }
 
